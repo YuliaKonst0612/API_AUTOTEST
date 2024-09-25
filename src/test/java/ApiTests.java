@@ -1,23 +1,40 @@
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.example.controllers.SuperheroController;
+import org.example.models.Superhero;
 import org.testng.annotations.BeforeClass;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.testng.annotations.Test;
+
 import static io.restassured.RestAssured.given;
+import static org.example.constants.SuperheroConstant.DEFAULT_SUPERHERO;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
 
 public class ApiTests {
 	private String baseUrl = "https://superhero.qa-test.csssr.com/superheroes";
+
 	@BeforeClass
 	public void setUp() {
 		RestAssured.baseURI = baseUrl;
 	}
 
-	@Test
-	@DisplayName("Add superhero with all required fields")
+	@Test(description = "Add superhero with all required fields")
+	void postAllRequiredFieldsTest2() {
+		SuperheroController superheroController = new SuperheroController();
+		Response response = superheroController.addDefaultHero();
+		Superhero createdHero = response.as(Superhero.class);
+
+		assertNotNull(createdHero.getId(), "id не должен быть null");
+		assertEquals(200, response.statusCode(), "Статус код не соответствует ожидаемому");
+		assertEquals(DEFAULT_SUPERHERO, createdHero, "Created not matched request hero");
+	}
+
+	@Test(description = "Add superhero with all required fields")
 	void postAllRequiredFieldsTest() {
 		String body = """
 				    {
@@ -40,14 +57,14 @@ public class ApiTests {
 		String responseBody = responseBodyCheck.body().prettyPrint();
 		String actualResponseBody = responseBodyCheck.body().asString();
 		String id = responseBodyCheck.jsonPath().getString("id");
-		Assertions.assertNotNull(id, "id не должен быть null");
+		assertNotNull(id, "id не должен быть null");
 		String actualBirthDate = responseBodyCheck.jsonPath().getString("birthDate");
 		String actualCity = responseBodyCheck.jsonPath().getString("city");
 		String actualFullName = responseBodyCheck.jsonPath().getString("fullName");
 		String actualGender = responseBodyCheck.jsonPath().getString("gender");
 		String actualMainSkill = responseBodyCheck.jsonPath().getString("mainSkill");
 
-		Assertions.assertEquals(200, status, "Статус код не соответствует ожидаемому");
+		assertEquals(200, status, "Статус код не соответствует ожидаемому");
 		assertEquals("2019-02-21", actualBirthDate, "birthDate не соответствует ожидаемому значению");
 		assertEquals("GOTHAM", actualCity, "Город не соответствует ожидаемому");
 		assertEquals("BATMAN", actualFullName, "Полное имя не соответствует ожидаемому");
@@ -55,8 +72,7 @@ public class ApiTests {
 		assertEquals("fight", actualMainSkill, "Основной навык не соответствует ожидаемому");
 	}
 
-	@Test
-	@DisplayName("Validate required fields")
+	@Test(description = "Validate required fields")
 	void postWithoutRequiredFieldsTest() {
 		String body = """
 				    {
@@ -83,13 +99,11 @@ public class ApiTests {
 				"    \"code\": \"BAD_REQUEST\"\n" +
 				"}";
 
-		Assertions.assertEquals(400, status, "Статус код не соответствует ожидаемому");
-		Assertions.assertEquals(expectedMessage, actualMessage, "Сообщение в теле ответа не соответствует ожиданиям");
+		assertEquals(400, status, "Статус код не соответствует ожидаемому");
+		assertEquals(expectedMessage, actualMessage, "Сообщение в теле ответа не соответствует ожиданиям");
 	}
 
-
-	@Test
-	@DisplayName("GET all superheroes")
+	@Test(description = "GET all superheroes")
 	void getAllSuperheroesTest() {
 		given().
 				when().
@@ -103,8 +117,7 @@ public class ApiTests {
 				.body(not(isEmptyOrNullString())); // Проверка, что тело ответа не пустое
 	}
 
-	@Test
-	@DisplayName("GET superhero by Id")
+	@Test(description = "GET superhero by Id")
 	void getSuperheroByIdTest() {
 		int id = 3;
 		given().
@@ -117,8 +130,7 @@ public class ApiTests {
 				body("id", equalTo(id));
 	}
 
-	@Test
-	@DisplayName("GET superhero by not existed id")
+	@Test(description = "GET superhero by not existed id")
 	void getSuperheroByNotExistedIdTest() {
 		int id = 154;
 		given().
@@ -132,8 +144,7 @@ public class ApiTests {
 				body("id", not(equalTo(id)));
 	}
 
-	@Test
-	@DisplayName("update superhero all fields")
+	@Test(description = "update superhero all fields")
 	void putSuperheroAllFieldsTest() {
 		int id = 1;
 		String body = """
@@ -173,8 +184,7 @@ public class ApiTests {
 				.body("mainSkill", equalTo("BUGS"));
 	}
 
-	@Test
-	@DisplayName("update superhero one field")
+	@Test(description = "update superhero one field")
 	void patchOneFieldTest() {
 		int id = 1;
 		String body = """
@@ -210,8 +220,7 @@ public class ApiTests {
 				.body("mainSkill", equalTo("BUGS"));
 	}
 
-	@Test
-	@DisplayName("update superhero all fields by not existed id ")
+	@Test(description = "update superhero all fields by not existed id ")
 	void putAllFieldsByNotExostedIdTest() {
 		int id = 132;
 		String body = """
@@ -239,12 +248,11 @@ public class ApiTests {
 		int status = response1.statusCode();
 
 		//баг: статус код не соответсвует ожидаемому. 400 вместо 404
-		Assertions.assertEquals(404, status, "Статус код не соответствует ожидаемому");
-		Assertions.assertEquals(expectedMessage, actualMessage, "Сообщение в теле ответа не соответствует ожиданиям");
+		assertEquals(404, status, "Статус код не соответствует ожидаемому");
+		assertEquals(expectedMessage, actualMessage, "Сообщение в теле ответа не соответствует ожиданиям");
 	}
 
-	@Test
-	@DisplayName("DELETE superhero")
+	@Test(description = "DELETE superhero")
 	void deleteSuperheroTest() {
 		int id = 1;
 		ValidatableResponse response =
@@ -263,8 +271,7 @@ public class ApiTests {
 				.statusCode(400);
 	}
 
-	@Test
-	@DisplayName("DELETE superhero by not existed id")
+	@Test(description = "DELETE superhero by not existed id")
 	void deleteSuperheroByNotExistedIdTest() {
 		int id = 154;
 		ValidatableResponse response =
